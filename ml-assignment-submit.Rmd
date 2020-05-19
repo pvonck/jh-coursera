@@ -1,5 +1,5 @@
 ---
-title: "Regression Course Project"
+title: "Practical Machine Learning Course Project"
 author: "Paul Vonck"
 highlighter: highlight.js
 output:
@@ -17,19 +17,21 @@ url:
 widgets: mathjax
 ---
 
-##Background
-Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.
+## Background
 
-In this project, our goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, our goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
 ---
 
 ## Load Libraries
+
 ```{r LoadLibs}
 library(caret)
 library(rattle)
 ```
 
-##Data download
+## Data download
+
 ```{r Download}
 training <- read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"),header=TRUE)
 dim(training)
@@ -37,7 +39,7 @@ testing <- read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml
 dim(testing)
 ```
 
-##Clean data by removing meta-data type columns, predictors with a number of NAs and predictors with near zero variance.
+## Clean data by removing meta-data type columns, predictors with a number of NAs and predictors with near zero variance.
 
 * Remove meta data columns 
 * Remove predictors with NAs
@@ -58,7 +60,7 @@ dim(trainingCleaned)
 
 ```
 
-#Show cleaned data structure
+## Show cleaned data structure
 
 * Predictors are numeric
 * Outcome (classe) character factor
@@ -70,9 +72,11 @@ str(trainingCleaned)
 ```
 
 ## Model Fitting
+
 In order to limit the effects of overfitting, and improve the efficicency of the models, we will cross-validation. We will use 5 folds. 10 folds had higher run times with no increased accuracy. We will build models with random forests and generalized boosted models.
 
 ---
+
 ```{r rf-gbp}
 library(caret)
 
@@ -107,8 +111,11 @@ confMatGBM$overall[1]
 ```
 
 ## Random Forest Model Characteristics
+
 The Random Forest model was more accurate with the test prediction and we show some of the model characteristics below.
+
 ---
+
 ```{r RFPlot}
 print(model_RF)
 model_RF$finalModel$classes
@@ -121,8 +128,9 @@ MostImpVars <- varImp(model_RF)
 MostImpVars
 ```
 
-##Conclusion and Test Set Prediction
-This shows that the random forest model is the best one. We will then use the random forest model to predict the values of classe for the test data set. We will also predict with the GBM model and compare with the random forest model prediction.
+## Conclusion and Test Set Prediction
+
+We will use the random forest model to predict the values of classe for the test data set. We will also predict with the GBM model and compare with the random forest model prediction.
 ---
 
 ```{r FinalPrediction}
@@ -131,3 +139,4 @@ predfinalGBM <- predict(model_RF,newdata=testingCleaned)
 predfinalGBM==predfinalRF
 predfinalRF
 ```
+
