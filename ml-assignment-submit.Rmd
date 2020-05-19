@@ -1,0 +1,133 @@
+---
+title: "Regression Course Project"
+author: "Paul Vonck"
+highlighter: highlight.js
+output:
+  html_document:
+    df_print: paged
+  pdf_document:
+  word_document: default
+mode: selfcontained
+hitheme: tomorrow
+subtitle: Regression
+framework: io2012
+url:
+  assets: ../../assets
+  lib: ../../librariesNew
+widgets: mathjax
+---
+
+##Background
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.
+
+In this project, our goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+---
+
+## Load Libraries
+```{r LoadLibs}
+library(caret)
+library(rattle)
+```
+
+##Data download
+```{r Download}
+training <- read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"),header=TRUE)
+dim(training)
+testing <- read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"),header=TRUE)
+dim(testing)
+```
+
+##Clean data by removing meta-data type columns, predictors with a number of NAs and predictors with near zero variance.
+
+* Remove meta data columns 
+* Remove predictors with NAs
+* Remove predictors with near zero variance
+
+---
+
+```{r Clean}
+trainingCleaned<- training[, colSums(is.na(training)) == 0]
+testingCleaned <- testing[, colSums(is.na(training)) == 0]
+trainingCleaned <- trainingCleaned[, -c(1:7)]
+testingCleaned <- testingCleaned[, -c(1:7)]
+NZV <- nearZeroVar(trainingCleaned)
+trainingCleaned <- trainingCleaned[, -NZV]
+testingCleaned  <- testingCleaned[, -NZV]
+dim(testingCleaned)
+dim(trainingCleaned)
+
+```
+
+#Show cleaned data structure
+
+* Predictors are numeric
+* Outcome (classe) character factor
+
+---
+
+```{r show-clean}
+str(trainingCleaned)
+```
+
+## Model Fitting
+In order to limit the effects of overfitting, and improve the efficicency of the models, we will cross-validation. We will use 5 folds. 10 folds had higher run times with no increased accuracy. We will build models with random forests and generalized boosted models.
+
+---
+```{r rf-gbp}
+library(caret)
+
+set.seed(257)
+
+inTrain1 <- createDataPartition(trainingCleaned$classe, p=0.50, list=FALSE)
+finalTrain <- trainingCleaned[inTrain1,]
+finalTest <- trainingCleaned[-inTrain1,]
+
+trControl <- trainControl(method="cv", number=5)
+model_RF <- train(classe~., data=trainingCleaned, method="rf", trControl=trControl, verbose=FALSE)
+model_GBM <- train(classe~., data=trainingCleaned, method="gbm", trControl=trControl, verbose=FALSE)
+```
+
+## Model Prediction
+
+* Predict with random forest model and display confusion matrix and accuracy
+* Predict with GBM mode and display confusion matrix and accuracy
+
+---
+
+```{r train-compare}
+trainpred <- predict(model_RF,newdata=finalTest)
+trainpredgbm <- predict(model_GBM,newdata=finalTest)
+finalTest$classe = as.factor(finalTest$classe)
+confMatRF <- confusionMatrix(finalTest$classe,trainpred)
+confMatRF$table
+confMatRF$overall[1]
+confMatGBM <- confusionMatrix(finalTest$classe,trainpredgbm)
+confMatGBM$table
+confMatGBM$overall[1]
+```
+
+## Random Forest Model Characteristics
+The Random Forest model was more accurate with the test prediction and we show some of the model characteristics below.
+---
+```{r RFPlot}
+print(model_RF)
+model_RF$finalModel$classes
+plot(model_RF$finalModel,main="Model error of Random forest model by number of trees")
+plot(model_RF,main="Accuracy of Random forest model by number of predictors")
+```
+
+```{r Variable-importance}
+MostImpVars <- varImp(model_RF)
+MostImpVars
+```
+
+##Conclusion and Test Set Prediction
+This shows that the random forest model is the best one. We will then use the random forest model to predict the values of classe for the test data set. We will also predict with the GBM model and compare with the random forest model prediction.
+---
+
+```{r FinalPrediction}
+predfinalRF <- predict(model_RF,newdata=testingCleaned)
+predfinalGBM <- predict(model_RF,newdata=testingCleaned)
+predfinalGBM==predfinalRF
+predfinalRF
+```
